@@ -39,7 +39,7 @@ if st.button("Classify Keywords"):
                     model="text-embedding-ada-002",
                     input=texts
                 )
-                return [data["embedding"] for data in response["data"]]
+                return [item['embedding'] for item in response['data']]
             
             st.info("Generating embeddings for brand terms...")
             brand_embeddings = np.array(get_embeddings(brand_terms))
