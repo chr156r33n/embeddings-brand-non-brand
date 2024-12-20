@@ -4,20 +4,6 @@ import pandas as pd
 import numpy as np
 from sklearn.metrics.pairwise import cosine_similarity
 
-
-# Noindex meta tag
-st.markdown(
-    """
-    <script>
-        const metaTag = document.createElement('meta');
-        metaTag.name = 'robots';
-        metaTag.content = 'noindex, nofollow';
-        document.getElementsByTagName('head')[0].appendChild(metaTag);
-    </script>
-    """,
-    unsafe_allow_html=True
-)
-
 # Title and Description
 
 st.title("Keyword Classifier")
