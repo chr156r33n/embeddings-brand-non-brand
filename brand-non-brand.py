@@ -8,9 +8,12 @@ from sklearn.metrics.pairwise import cosine_similarity
 # Noindex meta tag
 st.markdown(
     """
-    <head>
-        <meta name="robots" content="noindex, nofollow">
-    </head>
+    <script>
+        const metaTag = document.createElement('meta');
+        metaTag.name = 'robots';
+        metaTag.content = 'noindex, nofollow';
+        document.getElementsByTagName('head')[0].appendChild(metaTag);
+    </script>
     """,
     unsafe_allow_html=True
 )
