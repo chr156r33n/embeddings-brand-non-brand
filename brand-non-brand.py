@@ -8,6 +8,48 @@ from sklearn.metrics.pairwise import cosine_similarity
 st.title("Branded vs Non-Branded Keyword Classifier")
 st.write("Upload brand terms and keywords to classify keywords using OpenAI embeddings.")
 
+st.title("Branded vs Non-Branded Keyword Classifier")
+st.write("Upload brand terms and keywords to classify keywords using OpenAI embeddings.")
+
+# Instructions Section
+with st.expander("Read More: How to Use the App"):
+    st.markdown("""
+    ### Instructions for Using the App
+    1. **Enter your OpenAI API Key**:
+       - Obtain your API key from [OpenAI](https://platform.openai.com/signup).
+       - Log in or sign up for an account.
+       - Navigate to the API Keys section under your profile settings.
+       - Create a new key and copy it for use in this app.
+
+    2. **Upload CSV Files**:
+       - Upload a CSV file with a column named `brand_terms` containing your brand-related terms.
+       - Upload another CSV file with a column named `keywords` containing the keywords you want to classify.
+
+    3. **Set Cosine Similarity Threshold**:
+       - Use the slider to adjust the threshold for classification.
+       - Higher thresholds (e.g., 0.9) result in stricter matching, while lower thresholds (e.g., 0.7) allow more flexibility.
+
+    4. **Click 'Classify Keywords'**:
+       - The app will generate embeddings using OpenAI's API and classify the keywords as **branded** or **non-branded**.
+
+    5. **View Results**:
+       - A sample of 15 branded and 5 non-branded keywords will be displayed for quick QA.
+       - You can download the full results as a CSV file.
+
+    ### Notes
+    - Ensure your CSV files are formatted correctly with the appropriate column names (`brand_terms` and `keywords`).
+    - The app does not store your API key or data. Your key is used only during the session for embedding generation.
+
+    ### Troubleshooting
+    - If you encounter issues, verify:
+        - The API key is entered correctly.
+        - Your CSV files have the correct structure.
+        - Your OpenAI account has sufficient credits to use the API.
+
+    For further help, visit [OpenAI API Documentation](https://platform.openai.com/docs/).
+    """)
+
+
 # Input OpenAI API Key
 api_key = st.text_input("Enter your OpenAI API Key", type="password")
 
