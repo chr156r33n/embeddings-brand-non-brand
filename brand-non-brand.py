@@ -5,11 +5,9 @@ import numpy as np
 from sklearn.metrics.pairwise import cosine_similarity
 
 # Title and Description
-st.title("Branded vs Non-Branded Keyword Classifier")
-st.write("Upload brand terms and keywords to classify keywords using OpenAI embeddings.")
 
-st.title("Branded vs Non-Branded Keyword Classifier")
-st.write("Upload brand terms and keywords to classify keywords using OpenAI embeddings.")
+st.title("Keyword Classifier")
+st.write("Upload brand terms and keywords to classify keywords using embeddings.")
 
 # Instructions Section
 with st.expander("Read More: How to Use the App"):
