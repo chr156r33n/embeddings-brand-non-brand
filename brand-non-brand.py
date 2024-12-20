@@ -12,7 +12,8 @@ st.markdown(
         <meta name="robots" content="noindex, nofollow">
     </head>
     """,
-    unsafe_allow_html=True)
+    unsafe_allow_html=True
+)
 
 # Title and Description
 
