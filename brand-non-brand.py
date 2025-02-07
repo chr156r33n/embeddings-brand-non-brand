@@ -67,6 +67,32 @@ embedding_model = st.radio(
     help="Choose OpenAI for English keywords or CamemBERT for French keywords"
 )
 
+# Ensure this function is defined before the button click logic
+def get_camembert_embeddings(texts):
+    @st.cache_resource
+    def load_camembert_model():
+        tokenizer = CamembertTokenizer.from_pretrained('camembert-base')
+        model = CamembertModel.from_pretrained('camembert-base')
+        model.eval()
+        return tokenizer, model
+    
+    tokenizer, model = load_camembert_model()
+    embeddings = []
+    
+    with torch.no_grad():
+        for text in texts:
+            # Tokenize and prepare input
+            inputs = tokenizer(text, return_tensors="pt", padding=True, truncation=True, max_length=512)
+            
+            # Get model output
+            outputs = model(**inputs)
+            
+            # Use [CLS] token embedding (first token) as sentence embedding
+            embedding = outputs.last_hidden_state[0, 0, :].numpy()
+            embeddings.append(embedding)
+    
+    return np.array(embeddings)
+
 # Processing
 if st.button("Classify Keywords"):
     if embedding_model == "OpenAI (English)" and not api_key:
@@ -139,28 +165,3 @@ def get_embeddings(texts):
         input=texts
     )
     return [item['embedding'] for item in response['data']]
-
-def get_camembert_embeddings(texts):
-    @st.cache_resource
-    def load_camembert_model():
-        tokenizer = CamembertTokenizer.from_pretrained('camembert-base')
-        model = CamembertModel.from_pretrained('camembert-base')
-        model.eval()
-        return tokenizer, model
-    
-    tokenizer, model = load_camembert_model()
-    embeddings = []
-    
-    with torch.no_grad():
-        for text in texts:
-            # Tokenize and prepare input
-            inputs = tokenizer(text, return_tensors="pt", padding=True, truncation=True, max_length=512)
-            
-            # Get model output
-            outputs = model(**inputs)
-            
-            # Use [CLS] token embedding (first token) as sentence embedding
-            embedding = outputs.last_hidden_state[0, 0, :].numpy()
-            embeddings.append(embedding)
-    
-    return np.array(embeddings)
