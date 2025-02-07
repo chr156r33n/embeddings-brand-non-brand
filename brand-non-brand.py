@@ -67,6 +67,14 @@ embedding_model = st.radio(
     help="Choose OpenAI for English keywords or CamemBERT for French keywords"
 )
 
+# Define the get_embeddings function before the button click logic
+def get_embeddings(texts):
+    response = openai.Embedding.create(
+        model="text-embedding-ada-002",
+        input=texts
+    )
+    return [item['embedding'] for item in response['data']]
+
 # Ensure this function is defined before the button click logic
 def get_camembert_embeddings(texts):
     @st.cache_resource
@@ -161,10 +169,3 @@ if st.button("Classify Keywords"):
         
         except Exception as e:
             st.error(f"An error occurred: {e}")
-
-def get_embeddings(texts):
-    response = openai.Embedding.create(
-        model="text-embedding-ada-002",
-        input=texts
-    )
-    return [item['embedding'] for item in response['data']]
