@@ -3,6 +3,8 @@ import openai
 import pandas as pd
 import numpy as np
 from sklearn.metrics.pairwise import cosine_similarity
+from transformers import CamembertModel, CamembertTokenizer
+import torch
 
 # Title and Description
 
@@ -58,10 +60,17 @@ keyword_file = st.file_uploader("Upload a CSV file with keywords (column: 'keywo
 # Threshold Slider
 threshold = st.slider("Cosine Similarity Threshold", min_value=0.0, max_value=1.0, value=0.8)
 
+# Add model selection
+embedding_model = st.radio(
+    "Select Embedding Model",
+    ["OpenAI (English)", "CamemBERT (French)"],
+    help="Choose OpenAI for English keywords or CamemBERT for French keywords"
+)
+
 # Processing
 if st.button("Classify Keywords"):
-    if not api_key:
-        st.error("Please enter your OpenAI API key.")
+    if embedding_model == "OpenAI (English)" and not api_key:
+        st.error("Please enter your OpenAI API key for OpenAI embeddings.")
     elif not brand_file or not keyword_file:
         st.error("Please upload both brand terms and keywords.")
     else:
@@ -70,22 +79,21 @@ if st.button("Classify Keywords"):
             brand_terms = pd.read_csv(brand_file)['brand_terms'].tolist()
             keywords = pd.read_csv(keyword_file)['keywords'].tolist()
             
-            # Set OpenAI API key
-            openai.api_key = api_key
-            
-            # Generate embeddings
-            def get_embeddings(texts):
-                response = openai.Embedding.create(
-                    model="text-embedding-ada-002",
-                    input=texts
-                )
-                return [item['embedding'] for item in response['data']]
-            
-            st.info("Generating embeddings for brand terms...")
-            brand_embeddings = np.array(get_embeddings(brand_terms))
-            
-            st.info("Generating embeddings for keywords...")
-            keyword_embeddings = np.array(get_embeddings(keywords))
+            if embedding_model == "OpenAI (English)":
+                # Set OpenAI API key
+                openai.api_key = api_key
+                
+                st.info("Generating embeddings for brand terms...")
+                brand_embeddings = np.array(get_embeddings(brand_terms))
+                
+                st.info("Generating embeddings for keywords...")
+                keyword_embeddings = np.array(get_embeddings(keywords))
+            else:  # CamemBERT (French)
+                st.info("Generating embeddings for brand terms using CamemBERT...")
+                brand_embeddings = get_camembert_embeddings(brand_terms)
+                
+                st.info("Generating embeddings for keywords using CamemBERT...")
+                keyword_embeddings = get_camembert_embeddings(keywords)
             
             # Compute cosine similarities
             st.info("Calculating cosine similarities...")
@@ -124,3 +132,35 @@ if st.button("Classify Keywords"):
         
         except Exception as e:
             st.error(f"An error occurred: {e}")
+
+def get_embeddings(texts):
+    response = openai.Embedding.create(
+        model="text-embedding-ada-002",
+        input=texts
+    )
+    return [item['embedding'] for item in response['data']]
+
+def get_camembert_embeddings(texts):
+    @st.cache_resource
+    def load_camembert_model():
+        tokenizer = CamembertTokenizer.from_pretrained('camembert-base')
+        model = CamembertModel.from_pretrained('camembert-base')
+        model.eval()
+        return tokenizer, model
+    
+    tokenizer, model = load_camembert_model()
+    embeddings = []
+    
+    with torch.no_grad():
+        for text in texts:
+            # Tokenize and prepare input
+            inputs = tokenizer(text, return_tensors="pt", padding=True, truncation=True, max_length=512)
+            
+            # Get model output
+            outputs = model(**inputs)
+            
+            # Use [CLS] token embedding (first token) as sentence embedding
+            embedding = outputs.last_hidden_state[0, 0, :].numpy()
+            embeddings.append(embedding)
+    
+    return np.array(embeddings)
