@@ -5,6 +5,7 @@ import numpy as np
 from sklearn.metrics.pairwise import cosine_similarity
 from transformers import CamembertModel, CamembertTokenizer
 import torch
+from fuzzywuzzy import fuzz
 
 # Title and Description
 
@@ -67,6 +68,9 @@ embedding_model = st.radio(
     help="Choose OpenAI for English keywords or CamemBERT for French keywords"
 )
 
+# Add a checkbox for the new matching method
+use_substring_matching = st.checkbox("Use Substring and Fuzzy Matching", value=False, help="Check to use substring and fuzzy matching for classification.")
+
 # Define the get_embeddings function before the button click logic
 def get_embeddings(texts):
     response = openai.Embedding.create(
@@ -113,39 +117,69 @@ if st.button("Classify Keywords"):
             brand_terms = pd.read_csv(brand_file)['brand_terms'].tolist()
             keywords = pd.read_csv(keyword_file)['keywords'].tolist()
             
-            if embedding_model == "OpenAI (English)":
-                # Set OpenAI API key
-                openai.api_key = api_key
+            if use_substring_matching:
+                # Substring and fuzzy matching
+                classifications = []
+                for keyword in keywords:
+                    is_branded = False
+                    closest_brand_term = None
+                    max_similarity = 0
+                    for brand_term in brand_terms:
+                        # Check for exact substring match
+                        if brand_term.lower() in keyword.lower():
+                            is_branded = True
+                            closest_brand_term = brand_term
+                            break
+                        # Check for fuzzy match
+                        similarity = fuzz.partial_ratio(brand_term.lower(), keyword.lower())
+                        if similarity > max_similarity:
+                            max_similarity = similarity
+                            closest_brand_term = brand_term
+                        if similarity >= 85:  # You can adjust this threshold
+                            is_branded = True
+                            break
+                    classification = "branded" if is_branded else "non-branded"
+                    classifications.append({
+                        "keyword": keyword,
+                        "classification": classification,
+                        "max_similarity": max_similarity,
+                        "closest_brand_term": closest_brand_term
+                    })
+            else:
+                # Embedding-based matching
+                if embedding_model == "OpenAI (English)":
+                    # Set OpenAI API key
+                    openai.api_key = api_key
+                    
+                    st.info("Generating embeddings for brand terms...")
+                    brand_embeddings = np.array(get_embeddings(brand_terms))
+                    
+                    st.info("Generating embeddings for keywords...")
+                    keyword_embeddings = np.array(get_embeddings(keywords))
+                else:  # CamemBERT (French)
+                    st.info("Generating embeddings for brand terms using CamemBERT...")
+                    brand_embeddings = get_camembert_embeddings(brand_terms)
+                    
+                    st.info("Generating embeddings for keywords using CamemBERT...")
+                    keyword_embeddings = get_camembert_embeddings(keywords)
                 
-                st.info("Generating embeddings for brand terms...")
-                brand_embeddings = np.array(get_embeddings(brand_terms))
+                # Compute cosine similarities
+                st.info("Calculating cosine similarities...")
+                similarities = cosine_similarity(keyword_embeddings, brand_embeddings)
                 
-                st.info("Generating embeddings for keywords...")
-                keyword_embeddings = np.array(get_embeddings(keywords))
-            else:  # CamemBERT (French)
-                st.info("Generating embeddings for brand terms using CamemBERT...")
-                brand_embeddings = get_camembert_embeddings(brand_terms)
-                
-                st.info("Generating embeddings for keywords using CamemBERT...")
-                keyword_embeddings = get_camembert_embeddings(keywords)
-            
-            # Compute cosine similarities
-            st.info("Calculating cosine similarities...")
-            similarities = cosine_similarity(keyword_embeddings, brand_embeddings)
-            
-            # Classify keywords
-            classifications = []
-            for i, sim in enumerate(similarities):
-                max_similarity = max(sim)
-                max_index = sim.argmax()  # Get the index of the brand term with the highest similarity
-                closest_brand_term = brand_terms[max_index]  # Get the corresponding brand term
-                classification = "branded" if max_similarity >= threshold else "non-branded"
-                classifications.append({
-                    "keyword": keywords[i],
-                    "classification": classification,
-                    "max_similarity": max_similarity,
-                    "closest_brand_term": closest_brand_term  # Include the closest brand term
-                })
+                # Classify keywords
+                classifications = []
+                for i, sim in enumerate(similarities):
+                    max_similarity = max(sim)
+                    max_index = sim.argmax()  # Get the index of the brand term with the highest similarity
+                    closest_brand_term = brand_terms[max_index]  # Get the corresponding brand term
+                    classification = "branded" if max_similarity >= threshold else "non-branded"
+                    classifications.append({
+                        "keyword": keywords[i],
+                        "classification": classification,
+                        "max_similarity": max_similarity,
+                        "closest_brand_term": closest_brand_term  # Include the closest brand term
+                    })
             
             # Convert to DataFrame
             results = pd.DataFrame(classifications)
