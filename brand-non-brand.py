@@ -6,6 +6,7 @@ from sklearn.metrics.pairwise import cosine_similarity
 from transformers import CamembertModel, CamembertTokenizer
 import torch
 from fuzzywuzzy import fuzz
+import re
 
 # Title and Description
 
@@ -105,6 +106,15 @@ def get_camembert_embeddings(texts):
     
     return np.array(embeddings)
 
+# Function to generate regex patterns
+def generate_regex_patterns(terms):
+    patterns = []
+    for term in terms:
+        # Create a basic pattern that accounts for common variations
+        pattern = re.escape(term).replace(r'\ ', r'[-\s]?')
+        patterns.append(pattern)
+    return patterns
+
 # Processing
 if st.button("Classify Keywords"):
     if embedding_model == "OpenAI (English)" and not api_key:
@@ -184,6 +194,19 @@ if st.button("Classify Keywords"):
             # Convert to DataFrame
             results = pd.DataFrame(classifications)
             st.success("Classification complete!")
+            
+            # Extract branded keywords
+            branded_keywords = results[results['classification'] == 'branded']['keyword'].tolist()
+            
+            # Generate regex patterns
+            regex_patterns = generate_regex_patterns(branded_keywords)
+            
+            # Combine patterns into a single regex
+            combined_pattern = '|'.join(set(regex_patterns))  # Use set to deduplicate
+            
+            # Display the regex pattern
+            st.subheader("Generated Regex Pattern for Branded Keywords")
+            st.text_area("Regex Pattern", value=combined_pattern, height=100)
             
             # Quick QA Sample
             st.subheader("Quick QA Sample")
