@@ -129,11 +129,14 @@ if st.button("Classify Keywords"):
             classifications = []
             for i, sim in enumerate(similarities):
                 max_similarity = max(sim)
+                max_index = sim.argmax()  # Get the index of the brand term with the highest similarity
+                closest_brand_term = brand_terms[max_index]  # Get the corresponding brand term
                 classification = "branded" if max_similarity >= threshold else "non-branded"
                 classifications.append({
                     "keyword": keywords[i],
                     "classification": classification,
-                    "max_similarity": max_similarity
+                    "max_similarity": max_similarity,
+                    "closest_brand_term": closest_brand_term  # Include the closest brand term
                 })
             
             # Convert to DataFrame
