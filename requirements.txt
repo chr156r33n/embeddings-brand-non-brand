@@ -5,3 +5,5 @@ scikit-learn>=1.2.0
 torch>=2.0.0
 transformers
 sentencepiece>=0.1.99
+fuzzywuzzy>=0.18.0
+python-Levenshtein>=0.12.0
